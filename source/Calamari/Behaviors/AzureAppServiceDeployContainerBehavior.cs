@@ -43,7 +43,7 @@ namespace Calamari.AzureAppService.Behaviors
             var targetSite = AzureWebAppHelper.GetAzureTargetSite(webAppName, slotName, rgName);
 
             var imageName = variables.Get(SpecialVariables.Action.Package.PackageId);
-            var registryUrl = variables.Get(SpecialVariables.Action.Package.FeedId);
+            var registryUrl = variables.Get(SpecialVariables.Action.Package.Registry);
             var imageVersion = variables.Get(SpecialVariables.Action.Package.PackageVersion) ?? "latest";
 
             var token = await Auth.GetAuthTokenAsync(principalAccount);
@@ -51,6 +51,8 @@ namespace Calamari.AzureAppService.Behaviors
             var webAppClient = new WebSiteManagementClient(new Uri(principalAccount.ResourceManagementEndpointBaseUri),
                     new TokenCredentials(token))
                 {SubscriptionId = principalAccount.SubscriptionNumber};
+
+            Log.Info($"Updating web app to use image {imageName}:{imageVersion} from registry {registryUrl}");
 
             Log.Verbose("Retrieving config (this is required to update image)");
             var config = await webAppClient.WebApps.GetConfigurationAsync(targetSite);
