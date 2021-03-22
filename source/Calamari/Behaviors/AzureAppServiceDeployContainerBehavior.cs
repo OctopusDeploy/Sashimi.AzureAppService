@@ -52,26 +52,19 @@ namespace Calamari.AzureAppService.Behaviors
                     new TokenCredentials(token))
                 {SubscriptionId = principalAccount.SubscriptionNumber};
 
-            var startTime = DateTime.UtcNow;
-            Log.Verbose(
-                $"Logging current UTC time as {startTime}.  Will parse logs for init message occurring after this time.");
-
-            Log.Info("Retrieving config to update image");
+            Log.Verbose("Retrieving config (this is required to update image)");
             var config = await webAppClient.WebApps.GetConfigurationAsync(targetSite);
             config.LinuxFxVersion = $@"DOCKER|{imageName}:{imageVersion}";
 
-            Log.Info("Retrieving app settings to set registry url");
+            Log.Verbose("Retrieving app settings");
             var appSettings = await webAppClient.WebApps.ListApplicationSettingsAsync(targetSite);
             appSettings.Properties["DOCKER_REGISTRY_SERVER_URL"] = registryUrl;
 
-            Log.Info("Updating application settings");
+            Log.Info("Updating app settings with container registry");
             await webAppClient.WebApps.UpdateApplicationSettingsAsync(targetSite, appSettings);
 
-            Log.Info("Updating configuration");
+            Log.Info("Updating configuration with container image");
             await webAppClient.WebApps.UpdateConfigurationAsync(targetSite, config);
-
-            Log.Info("Restarting webapp (softly if possible)");
-            await webAppClient.WebApps.RestartAsync(targetSite, true);
         }
     }
 }
