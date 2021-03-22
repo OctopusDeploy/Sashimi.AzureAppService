@@ -181,7 +181,7 @@ namespace Calamari.AzureAppService.Tests
             vars.Add(SpecialVariables.Action.Package.FeedId, "https://index.docker.io");
             vars.Add(SpecialVariables.Action.Package.PackageId, "nginx");
             vars.Add(SpecialVariables.Action.Package.PackageVersion, "latest");
-            vars.Add(SpecialVariables.Action.Azure.DeploymentType, "ImageDeploy");
+            vars.Add(SpecialVariables.Action.Azure.DeploymentType, "Container");
             //vars.Add(SpecialVariables.Action.Azure.ContainerSettings, BuildContainerConfigJson());
 
         }
