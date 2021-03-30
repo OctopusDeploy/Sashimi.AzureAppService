@@ -1,4 +1,6 @@
 ﻿using Octopus.CoreUtilities;
+using Octopus.Diagnostics;
+using Octopus.Server.Extensibility.HostServices.Diagnostics;
 using Sashimi.AzureScripting;
 using Sashimi.Server.Contracts.ActionHandlers;
 
@@ -6,7 +8,7 @@ namespace Sashimi.AzureAppService
 {
     class AzureAppServiceActionHandler : IActionHandler
     {
-        private const string AzureWebAppDeploymentTargetTypeId = "AzureWebApp";
+        const string AzureWebAppDeploymentTargetTypeId = "AzureWebApp";
 
         public string Id => SpecialVariables.Action.Azure.ActionTypeName;
 
@@ -25,7 +27,7 @@ namespace Sashimi.AzureAppService
         public ActionHandlerCategory[] Categories => new[]
             {ActionHandlerCategory.BuiltInStep, AzureConstants.AzureActionHandlerCategory};
 
-        public IActionHandlerResult Execute(IActionHandlerContext context)
+        public IActionHandlerResult Execute(IActionHandlerContext context, ITaskLog taskLog)
         {
             if (context.DeploymentTargetType.Some())
             {
@@ -34,8 +36,16 @@ namespace Sashimi.AzureAppService
                         $"The machine {context.DeploymentTargetName.SomeOr("<unknown>")} will not be deployed to because it is not an Azure Web Application deployment target");
             }
 
-            return context.CalamariCommand(AzureConstants.CalamariAzure, "deploy-azure-app-service").WithAzureTools(context)
-                .WithStagedPackageArgument().Execute();
+            var commandBuilder = context.CalamariCommand(AzureConstants.CalamariAzure, "deploy-azure-app-service")
+                .WithAzureTools(context, taskLog);
+
+            // If we are deploying a container image, then there won't be a staged package
+            if (!context.Variables.Get(SpecialVariables.Action.Azure.DeploymentType, "").Equals("Container"))
+            {
+                commandBuilder = commandBuilder.WithStagedPackageArgument();
+            }
+
+            return commandBuilder.Execute(taskLog);
         }
     }
 }

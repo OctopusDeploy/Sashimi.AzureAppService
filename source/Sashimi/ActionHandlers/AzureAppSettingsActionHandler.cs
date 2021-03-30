@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.Text;
 using Octopus.CoreUtilities;
+using Octopus.Server.Extensibility.HostServices.Diagnostics;
 using Sashimi.AzureScripting;
 using Sashimi.Server.Contracts.ActionHandlers;
 
-namespace Sashimi.AzureAppService.ActionHandlers
+namespace Sashimi.AzureAppService
 {
     class AzureAppSettingsActionHandler : IActionHandler
     {
         private const string AzureWebAppDeploymentTargetTypeId = "AzureWebApp";
-
+        
         public string Id => SpecialVariables.Action.Azure.ActionTypeName;
 
         public string Name => "Deploy app settings/connection strings to an Azure App Service";
@@ -28,7 +29,7 @@ namespace Sashimi.AzureAppService.ActionHandlers
         public ActionHandlerCategory[] Categories => new[]
             {ActionHandlerCategory.BuiltInStep, AzureConstants.AzureActionHandlerCategory};
 
-        public IActionHandlerResult Execute(IActionHandlerContext context)
+        public IActionHandlerResult Execute(IActionHandlerContext context, ITaskLog taskLog)
         {
             if (context.DeploymentTargetType.Some())
             {
@@ -39,8 +40,8 @@ namespace Sashimi.AzureAppService.ActionHandlers
                 }
             }
             
-            return context.CalamariCommand(AzureConstants.CalamariAzure, "deploy-azure-app-settings").WithAzureTools(context)
-                .WithStagedPackageArgument().Execute();
+            return context.CalamariCommand(AzureConstants.CalamariAzure, "deploy-azure-app-settings").WithAzureTools(context, taskLog)
+                .WithStagedPackageArgument().Execute(taskLog);
         }
     }
 }
