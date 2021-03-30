@@ -92,7 +92,12 @@ namespace Calamari.AzureAppService.Tests
         {
             await resourceGroupClient.StartDeleteAsync(resourceGroupName);
         }
-        
+
+        public async Task TestAppSettingsDeployCommand()
+        {
+
+        }
+
         [Test]
         public async Task TestSiteSettings()
         {

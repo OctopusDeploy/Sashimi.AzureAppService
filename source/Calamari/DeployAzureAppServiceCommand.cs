@@ -16,4 +16,13 @@ namespace Calamari.AzureAppService
             yield return resolver.Create<AzureAppServiceSettingsBehaviour>();
         }
     }
+
+    [Command("deploy-azure-app-settings", Description = "Creates or updates existing app settings")]
+    public class DeployAzureAppSettingsCommand : PipelineCommand
+    {
+        protected override IEnumerable<IDeployBehaviour> Deploy(DeployResolver resolver)
+        {
+            yield return resolver.Create<AzureAppServiceBehaviour>();
+        }
+    }
 }
