@@ -16,7 +16,7 @@
                 public static readonly string WebAppName = "Octopus.Action.Azure.WebAppName";
                 public static readonly string WebAppSlot = "Octopus.Action.Azure.DeploymentSlot";
                 public static readonly string AppSettings = "Octopus.Action.Azure.AppSettings";
-                public static readonly string ContainerInitTimeout = "Octopus.Action.Azure.ContainerInitTimeout";
+                public static readonly string ConnectionStrings = "Octopus.Action.Azure.ConnectionStrings";
             }
 
             public static class Package

@@ -67,10 +67,13 @@ namespace Calamari.AzureAppService.Behaviors
             };
 
             var appSettings =
-                JsonConvert.DeserializeObject<AppSetting[]>(variables.Get(SpecialVariables.Action.Azure.AppSettings, ""))
-                //?? new AppSetting[] { };
-                ;
+                JsonConvert.DeserializeObject<AppSetting[]>(
+                    variables.Get(SpecialVariables.Action.Azure.AppSettings, ""));
 
+            var connStrings =
+                JsonConvert.DeserializeObject<ConnectionStringSetting[]>(
+                    variables.Get(SpecialVariables.Action.Azure.ConnectionStrings, ""));
+                
             Log.Verbose($"Deploy publishing app settings to webapp {webAppName} in resource group {resourceGroupName}");
 
             // publish defined settings (automatically merges with existing settings
@@ -94,29 +97,54 @@ namespace Calamari.AzureAppService.Behaviors
             };
 
             var existingSlotSettings = new List<string>();
+            // for each app setting found on the web app (existing app setting) update it value and add if is a slot setting, add
             foreach (var (name, value, SlotSetting) in (await AppSettingsManagement.GetAppSettingsAsync(webAppClient,
                 authToken, targetSite)).ToList())
             {
                 settingsDict.Properties[name] = value;
+
                 if (SlotSetting)
                     existingSlotSettings.Add(name);
             }
 
+            // for each app setting defined by the user
             foreach (var setting in appSettings)
             {
+                // add/update the settings value
                 settingsDict.Properties[setting.Name] = setting.Value;
+                
+                // if the user indicates a settings should no longer be a slot setting
+                if (existingSlotSettings.Contains(setting.Name) && !setting.SlotSetting)
+                {
+                    Log.Verbose($"Removing {setting.Name} from the list of slot settings");
+                    existingSlotSettings.Remove(setting.Name);
+                }
             }
 
             await AppSettingsManagement.PutAppSettingsAsync(webAppClient, settingsDict, targetSite);
             var slotSettings = appSettings
                 .Where(setting => setting.SlotSetting)
                 .Select(setting => setting.Name).ToArray();
-
+            
             if (!slotSettings.Any())
                 return;
 
             await AppSettingsManagement.PutSlotSettingsListAsync(webAppClient, targetSite,
                 slotSettings.Union(existingSlotSettings), authToken);
+        }
+
+        private async Task PublishConnectionStrings(WebSiteManagementClient webAppClient, TargetSite targetSite,
+            ConnectionStringSetting[] newConStrings, string authToken)
+        {
+            var conStrings = await AppSettingsManagement.GetConnectionStringsAsync(webAppClient, targetSite);
+            
+            foreach (var connectionStringSetting in newConStrings)
+            {
+                conStrings.Properties[connectionStringSetting.Name] =
+                    new ConnStringValueTypePair(connectionStringSetting.Value, connectionStringSetting.Type);
+            }
+
+            await webAppClient.WebApps.UpdateConnectionStringsAsync(targetSite, conStrings);
         }
     }
 }
