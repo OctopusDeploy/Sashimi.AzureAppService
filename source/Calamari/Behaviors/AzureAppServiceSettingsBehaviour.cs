@@ -78,6 +78,7 @@ namespace Calamari.AzureAppService.Behaviors
 
             // publish defined settings (automatically merges with existing settings
             await PublishAppSettings(webAppClient, targetSite, appSettings, token);
+            await PublishConnectionStrings(webAppClient, targetSite, connStrings);
         }
 
         /// <summary>
@@ -134,7 +135,7 @@ namespace Calamari.AzureAppService.Behaviors
         }
 
         private async Task PublishConnectionStrings(WebSiteManagementClient webAppClient, TargetSite targetSite,
-            ConnectionStringSetting[] newConStrings, string authToken)
+            ConnectionStringSetting[] newConStrings)
         {
             var conStrings = await AppSettingsManagement.GetConnectionStringsAsync(webAppClient, targetSite);
             
