@@ -27,7 +27,16 @@
 
                 // This will only be set for container registry feeds
                 public static readonly string Registry = "Octopus.Action.Package[].Registry";
+                
+
+                public static class Feed
+                {
+                    public static readonly string Username = "Octopus.Action.Package[].Feed.Username";
+                    public static readonly string Password = "Octopus.Action.Package[].Feed.Password";
+                }
             }
+
+
 
         }
     }
