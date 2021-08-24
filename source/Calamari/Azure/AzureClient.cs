@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 
@@ -7,10 +8,10 @@ namespace Calamari.Azure
     {
         public static IAzure CreateAzureClient(this ServicePrincipalAccount servicePrincipal)
         {
-            AzureEnvironment GetAzureEnvironment(string environmentName)
+            AzureEnvironment GetAzureEnvironment(AzureKnownEnvironment environment)
             {
-                return !string.IsNullOrEmpty(environmentName)
-                    ? AzureEnvironment.FromName(environmentName) ?? AzureEnvironment.AzureGlobalCloud
+                return !string.IsNullOrEmpty(environment.Value)
+                    ? AzureEnvironment.FromName(environment.Value) ?? throw new InvalidOperationException($"Unknown environment name {environment.Value}")
                     : AzureEnvironment.AzureGlobalCloud;
             }
 

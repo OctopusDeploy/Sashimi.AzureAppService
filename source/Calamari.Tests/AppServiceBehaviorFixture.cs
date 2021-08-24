@@ -15,6 +15,7 @@ using Calamari.Azure;
 using Calamari.Common.Plumbing.FileSystem;
 using Calamari.Common.Plumbing.Variables;
 using Calamari.Tests.Shared;
+using Calamari.Tests.Shared.LogParser;
 using FluentAssertions;
 using Microsoft.Azure.Management.WebSites;
 using Microsoft.Azure.Management.WebSites.Models;
@@ -91,30 +92,48 @@ namespace Calamari.AzureAppService.Tests
         [Test]
         public async Task Deploy_WebAppZip()
         {
-            (string packagePath, string packageName, string packageVersion) packageinfo;
-
-            var tempPath = TemporaryDirectory.Create();
-            new DirectoryInfo(tempPath.DirectoryPath).CreateSubdirectory("AzureZipDeployPackage");
-            File.WriteAllText(Path.Combine($"{tempPath.DirectoryPath}/AzureZipDeployPackage", "index.html"),
-                "Hello #{Greeting}");
-
-            packageinfo.packagePath = $"{tempPath.DirectoryPath}/AzureZipDeployPackage.1.0.0.zip";
-            packageinfo.packageVersion = "1.0.0";
-            packageinfo.packageName = "AzureZipDeployPackage";
-            ZipFile.CreateFromDirectory($"{tempPath.DirectoryPath}/AzureZipDeployPackage", packageinfo.packagePath);
-
+            var packageinfo = PrepareZipPackage();
+            
             await CommandTestBuilder.CreateAsync<DeployAzureAppServiceCommand, Program>().WithArrange(context =>
             {
                 context.WithPackage(packageinfo.packagePath, packageinfo.packageName, packageinfo.packageVersion);
                 AddVariables(context);
             }).Execute();
 
-            //await new AzureAppServiceBehaviour(new InMemoryLog()).Execute(runningContext);
             await AssertContent($"{site.Name}.azurewebsites.net", $"Hello {greeting}");
         }
         
         [Test]
-        public async Task CanDeployZip_WithSlightlyInvalidEnvironment()
+        public async Task CanDeployZip_WithAzureCloudEnvironment()
+        {
+            var packageinfo = PrepareZipPackage();
+
+            await CommandTestBuilder.CreateAsync<DeployAzureAppServiceCommand, Program>().WithArrange(context =>
+            {
+                context.WithPackage(packageinfo.packagePath, packageinfo.packageName, packageinfo.packageVersion);
+                AddVariables(context);
+                context.AddVariable(AccountVariables.Environment, "AzureCloud");
+            }).Execute();
+            
+            await AssertContent($"{site.Name}.azurewebsites.net", $"Hello {greeting}");
+        }
+        
+        [Test]
+        public async Task DeployingWithInvalidEnvironment_ThrowsAnException()
+        {
+            var packageinfo = PrepareZipPackage();
+            
+            var commandResult = await CommandTestBuilder.CreateAsync<DeployAzureAppServiceCommand, Program>().WithArrange(context =>
+                {
+                    context.WithPackage(packageinfo.packagePath, packageinfo.packageName, packageinfo.packageVersion);
+                    AddVariables(context);
+                    context.AddVariable(AccountVariables.Environment, "NonSenseEnvironment");
+                }).Execute(false);
+
+            commandResult.Outcome.Should().Be(TestExecutionOutcome.Unsuccessful);
+        }
+
+        private static (string packagePath, string packageName, string packageVersion) PrepareZipPackage()
         {
             (string packagePath, string packageName, string packageVersion) packageinfo;
 
@@ -127,15 +146,7 @@ namespace Calamari.AzureAppService.Tests
             packageinfo.packageVersion = "1.0.0";
             packageinfo.packageName = "AzureZipDeployPackage";
             ZipFile.CreateFromDirectory($"{tempPath.DirectoryPath}/AzureZipDeployPackage", packageinfo.packagePath);
-
-            await CommandTestBuilder.CreateAsync<DeployAzureAppServiceCommand, Program>().WithArrange(context =>
-            {
-                context.WithPackage(packageinfo.packagePath, packageinfo.packageName, packageinfo.packageVersion);
-                AddVariables(context);
-                context.AddVariable(AccountVariables.Environment, "AzureCloud");
-            }).Execute();
-            
-            await AssertContent($"{site.Name}.azurewebsites.net", $"Hello {greeting}");
+            return packageinfo;
         }
 
         [Test]
