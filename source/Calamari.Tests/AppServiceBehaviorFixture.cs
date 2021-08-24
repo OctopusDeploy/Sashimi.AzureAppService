@@ -112,6 +112,31 @@ namespace Calamari.AzureAppService.Tests
             //await new AzureAppServiceBehaviour(new InMemoryLog()).Execute(runningContext);
             await AssertContent($"{site.Name}.azurewebsites.net", $"Hello {greeting}");
         }
+        
+        [Test]
+        public async Task CanDeployZip_WithSlightlyInvalidEnvironment()
+        {
+            (string packagePath, string packageName, string packageVersion) packageinfo;
+
+            var tempPath = TemporaryDirectory.Create();
+            new DirectoryInfo(tempPath.DirectoryPath).CreateSubdirectory("AzureZipDeployPackage");
+            File.WriteAllText(Path.Combine($"{tempPath.DirectoryPath}/AzureZipDeployPackage", "index.html"),
+                "Hello #{Greeting}");
+
+            packageinfo.packagePath = $"{tempPath.DirectoryPath}/AzureZipDeployPackage.1.0.0.zip";
+            packageinfo.packageVersion = "1.0.0";
+            packageinfo.packageName = "AzureZipDeployPackage";
+            ZipFile.CreateFromDirectory($"{tempPath.DirectoryPath}/AzureZipDeployPackage", packageinfo.packagePath);
+
+            await CommandTestBuilder.CreateAsync<DeployAzureAppServiceCommand, Program>().WithArrange(context =>
+            {
+                context.WithPackage(packageinfo.packagePath, packageinfo.packageName, packageinfo.packageVersion);
+                AddVariables(context);
+                context.AddVariable(AccountVariables.Environment, "AzureCloud");
+            }).Execute();
+            
+            await AssertContent($"{site.Name}.azurewebsites.net", $"Hello {greeting}");
+        }
 
         [Test]
         public async Task Deploy_WebAppZipSlot()
