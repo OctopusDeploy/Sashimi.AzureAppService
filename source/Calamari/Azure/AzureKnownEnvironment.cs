@@ -16,8 +16,8 @@
         
         public static implicit operator AzureKnownEnvironment(string environment)
         {
-            if (environment == Global.Value || environment == "AzureCloud") // this environment name is defined in Sashimi.Azure.Accounts.AzureEnvironmentsListAction
-                return Global;
+            if (environment == Global.Value || environment == "AzureCloud") // This environment name is defined in Sashimi.Azure.Accounts.AzureEnvironmentsListAction
+                return Global;                                              // We interpret it as the normal Azure environment for historical reasons
             if (environment == AzureChinaCloud.Value)
                 return AzureChinaCloud;
             if (environment == AzureUSGovernment.Value)
