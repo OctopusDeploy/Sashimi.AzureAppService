@@ -1,4 +1,7 @@
-﻿namespace Calamari.Azure
+﻿using System;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
+
+namespace Calamari.Azure
 {
     public sealed class AzureKnownEnvironment
     { 
@@ -9,15 +12,24 @@
         {
             Value = environment;
             
-            if (environment == "AzureCloud") // This environment name is defined in Sashimi.Azure.Accounts.AzureEnvironmentsListAction
-                Value = Global.Value;        // We interpret it as the normal Azure environment for historical reasons)
+            if (string.IsNullOrEmpty(environment) || environment == "AzureCloud") // This environment name is defined in Sashimi.Azure.Accounts.AzureEnvironmentsListAction
+                Value = Global.Value;                                             // We interpret it as the normal Azure environment for historical reasons)
+
+            azureEnvironment = AzureEnvironment.FromName(Value) ??
+                               throw new InvalidOperationException($"Unknown environment name {Value}");
         }
 
+        private readonly AzureEnvironment azureEnvironment;
         public string Value { get; }
 
         public static readonly AzureKnownEnvironment Global = new AzureKnownEnvironment("AzureGlobalCloud");
         public static readonly AzureKnownEnvironment AzureChinaCloud = new AzureKnownEnvironment("AzureChinaCloud");
         public static readonly AzureKnownEnvironment AzureUSGovernment = new AzureKnownEnvironment("AzureUSGovernment");
         public static readonly AzureKnownEnvironment AzureGermanCloud = new AzureKnownEnvironment("AzureGermanCloud");
+
+        public AzureEnvironment AsAzureSDKEnvironment()
+        {
+            return azureEnvironment;
+        }
     }
 }
