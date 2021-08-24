@@ -19,7 +19,7 @@ namespace Calamari.Azure
                 .Authenticate(
                     SdkContext.AzureCredentialsFactory.FromServicePrincipal(servicePrincipal.ClientId,
                         servicePrincipal.Password, servicePrincipal.TenantId,
-                        GetAzureEnvironment(servicePrincipal.AzureEnvironment)
+                        GetAzureEnvironment(new AzureKnownEnvironment(servicePrincipal.AzureEnvironment))
                     ))
                 .WithSubscription(servicePrincipal.SubscriptionNumber);
         }
