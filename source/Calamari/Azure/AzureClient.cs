@@ -7,13 +7,19 @@ namespace Calamari.Azure
     {
         public static IAzure CreateAzureClient(this ServicePrincipalAccount servicePrincipal)
         {
+            AzureEnvironment GetAzureEnvironment(string environmentName)
+            {
+                return !string.IsNullOrEmpty(environmentName)
+                    ? AzureEnvironment.FromName(environmentName) ?? AzureEnvironment.AzureGlobalCloud
+                    : AzureEnvironment.AzureGlobalCloud;
+            }
+
             return Microsoft.Azure.Management.Fluent.Azure.Configure()
                 .Authenticate(
                     SdkContext.AzureCredentialsFactory.FromServicePrincipal(servicePrincipal.ClientId,
                         servicePrincipal.Password, servicePrincipal.TenantId,
-                        !string.IsNullOrEmpty(servicePrincipal.AzureEnvironment)
-                            ? AzureEnvironment.FromName(servicePrincipal.AzureEnvironment)
-                            : AzureEnvironment.AzureGlobalCloud))
+                        GetAzureEnvironment(servicePrincipal.AzureEnvironment)
+                    ))
                 .WithSubscription(servicePrincipal.SubscriptionNumber);
         }
     }
