@@ -21,8 +21,7 @@ namespace Calamari.AzureAppService
         public string Username { get; set; }
 
         public string PublishUrl { get; set; }
-
-
+        
         public static async Task<PublishingProfile> GetPublishingProfile(TargetSite targetSite,
             ServicePrincipalAccount account)
         {
