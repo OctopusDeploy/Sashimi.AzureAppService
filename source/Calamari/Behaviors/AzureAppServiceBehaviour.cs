@@ -72,7 +72,7 @@ namespace Calamari.AzureAppService.Behaviors
             if (targetSite.HasSlot)
                 slotCreateTask = FindOrCreateSlot(webApp, targetSite);
 
-            string[]? substitutionFeatures = new[]
+            string[]? substitutionFeatures =
             {
                 KnownVariables.Features.ConfigurationTransforms,
                 KnownVariables.Features.StructuredConfigurationVariables,
@@ -84,7 +84,7 @@ namespace Calamari.AzureAppService.Behaviors
              * https://github.com/OctopusDeploy/Calamari/tree/master/source/Calamari.Common/Features/Behaviours
              */
 
-            string? uploadPath = string.Empty;
+            var uploadPath = string.Empty;
             if (substitutionFeatures.Any(featureName => context.Variables.IsFeatureEnabled(featureName)))
                 uploadPath = (await Archive.PackageArchive(context.StagingDirectory, context.CurrentDirectory))
                     .FullName;
