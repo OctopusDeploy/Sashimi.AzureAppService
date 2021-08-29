@@ -19,7 +19,7 @@ namespace Sashimi.AzureAppService.Tests
         [Test]
         public void RespondsToCorrectTemplateAndProvider()
         {
-            new AzureCloudTemplateHanlder(formatIdentifier).CanHandleTemplate("AzureAppService", "{\"hi\": \"there\"}").Should().BeTrue();
+            new AzureCloudTemplateHandler(formatIdentifier).CanHandleTemplate("AzureAppService", "{\"hi\": \"there\"}").Should().BeTrue();
         }
     }
 }

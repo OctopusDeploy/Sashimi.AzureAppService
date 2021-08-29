@@ -27,7 +27,7 @@ namespace Sashimi.AzureWebApp
                      builder.RegisterType<AzureWebAppServiceMessageHandler>()
                             .AsSelf()
                             .InstancePerLifetimeScope();
-                     builder.RegisterType<AzureCloudTemplateHanlder>()
+                     builder.RegisterType<AzureCloudTemplateHandler>()
                             .As<ICloudTemplateHandler>()
                             .SingleInstance();
               }

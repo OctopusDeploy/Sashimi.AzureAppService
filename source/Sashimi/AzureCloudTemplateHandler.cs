@@ -1,18 +1,17 @@
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using Octopus.Server.Extensibility.Metadata;
 using Sashimi.Server.Contracts;
 using Sashimi.Server.Contracts.CloudTemplates;
 
 namespace Sashimi.AzureAppService
 {
-    public class AzureCloudTemplateHanlder : ICloudTemplateHandler
+    public class AzureCloudTemplateHandler : ICloudTemplateHandler
     {
         private const string Provider = "AzureAppService";
 
         private readonly IFormatIdentifier formatIdentifier;
 
-        public AzureCloudTemplateHanlder(IFormatIdentifier formatIdentifier)
+        public AzureCloudTemplateHandler(IFormatIdentifier formatIdentifier)
         {
             this.formatIdentifier = formatIdentifier;
         }
