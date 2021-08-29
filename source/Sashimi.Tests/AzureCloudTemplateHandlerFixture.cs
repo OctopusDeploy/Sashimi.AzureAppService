@@ -7,20 +7,25 @@ namespace Sashimi.AzureAppService.Tests
 {
     public class AzureCloudTemplateHandlerFixture
     {
-        IFormatIdentifier formatIdentifier;
+        IFormatIdentifier formatIdentifierTrue;
+        IFormatIdentifier formatIdentifierFalse;
 
         [SetUp]
         public void SetUp()
         {
-            formatIdentifier = Substitute.For<IFormatIdentifier>();
-            formatIdentifier.IsJson(Arg.Any<string>()).ReturnsForAnyArgs(true);
+            formatIdentifierTrue = Substitute.For<IFormatIdentifier>();
+            formatIdentifierTrue.IsJson(Arg.Any<string>()).ReturnsForAnyArgs(true);
+
+            formatIdentifierFalse = Substitute.For<IFormatIdentifier>();
+            formatIdentifierFalse.IsJson(Arg.Any<string>()).ReturnsForAnyArgs(false);
         }
 
         [Test]
         public void RespondsToCorrectTemplateAndProvider()
         {
-            new AzureCloudTemplateHandler(formatIdentifier).CanHandleTemplate("AzureAppService", "{\"hi\": \"there\"}").Should().BeTrue();
-            new AzureCloudTemplateHandler(formatIdentifier).CanHandleTemplate("AzureAppService", "#{blah}").Should().BeTrue();
+            new AzureCloudTemplateHandler(formatIdentifierTrue).CanHandleTemplate("AzureAppService", "{\"hi\": \"there\"}").Should().BeTrue();
+            new AzureCloudTemplateHandler(formatIdentifierTrue).CanHandleTemplate("AzureAppService", "#{blah}").Should().BeTrue();
+            new AzureCloudTemplateHandler(formatIdentifierFalse).CanHandleTemplate("AzureAppService", "#{blah}").Should().BeTrue();
         }
     }
 }
