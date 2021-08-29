@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Octopus.Server.Extensibility.Metadata;
+using Sashimi.Server.Contracts;
 using Sashimi.Server.Contracts.CloudTemplates;
 
 namespace Sashimi.AzureAppService
@@ -8,11 +9,17 @@ namespace Sashimi.AzureAppService
     public class AzureCloudTemplateHanlder : ICloudTemplateHandler
     {
         private const string Provider = "AzureAppService";
-        private const string Template = "JSON";
+
+        private readonly IFormatIdentifier formatIdentifier;
+
+        public AzureCloudTemplateHanlder(IFormatIdentifier formatIdentifier)
+        {
+            this.formatIdentifier = formatIdentifier;
+        }
         
         public bool CanHandleTemplate(string providerId, string template)
         {
-            return providerId == Provider && template == Template;
+            return providerId == Provider && (template.Contains("#{") || formatIdentifier.IsJson(template));
         }
 
         public Metadata ParseTypes(string template)
@@ -22,8 +29,6 @@ namespace Sashimi.AzureAppService
 
         public object ParseModel(string template)
         {
-            // This ensure the input is valid JSON (assuming it doesn't have variable substitution
-            if (!template.Contains("#{")) JObject.Parse(template);
             return new Dictionary<string, object>();
         }
     }

@@ -1,31 +1,25 @@
-using System;
 using FluentAssertions;
-using Newtonsoft.Json;
+using NSubstitute;
 using NUnit.Framework;
+using Sashimi.Server.Contracts;
 
 namespace Sashimi.AzureAppService.Tests
 {
     public class AzureCloudTemplateHandlerFixture
     {
-        [Test]
-        public void RespondsToCorrectTemplateAndProvider()
-        {
-            new AzureCloudTemplateHanlder().CanHandleTemplate("AzureAppService", "JSON").Should().BeTrue();
-            new AzureCloudTemplateHanlder().CanHandleTemplate("AzureAppService", "YAML").Should().BeFalse();
-        }
+        IFormatIdentifier formatIdentifier;
 
-        [Test]
-        public void ReturnsWithValidJSON()
+        [SetUp]
+        public void SetUp()
         {
-            new AzureCloudTemplateHanlder().ParseModel("{\"hi\": \"there\"}").Should().NotBeNull();
+            formatIdentifier = Substitute.For<IFormatIdentifier>();
+            formatIdentifier.IsJson(Arg.Any<string>()).ReturnsForAnyArgs(true);
         }
         
         [Test]
-        public void ThrowsWithInvalidJSON()
+        public void RespondsToCorrectTemplateAndProvider()
         {
-            Action act = () => new AzureCloudTemplateHanlder().ParseModel("I am a string");
-                
-            act.Should().Throw<JsonReaderException>();
+            new AzureCloudTemplateHanlder(formatIdentifier).CanHandleTemplate("AzureAppService", "{\"hi\": \"there\"}").Should().BeTrue();
         }
     }
 }
