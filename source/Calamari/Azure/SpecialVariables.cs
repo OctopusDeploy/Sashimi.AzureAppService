@@ -37,5 +37,13 @@
                 }
             }
         }
+
+        public static class HealthCheck
+        {
+            public static class Output
+            {
+                public static readonly string AppServicePlan = "Octopus.HealthCheck.Azure.AppServicePlan";
+            }
+        }
     }
 }
