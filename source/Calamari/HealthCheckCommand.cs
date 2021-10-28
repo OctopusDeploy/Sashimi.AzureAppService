@@ -45,6 +45,9 @@ namespace Calamari.AzureAppService
                 throw new Exception($"Could not find site {siteAndSlotName} in resource group {resourceGroupName}, using Service Principal with subscription {servicePrincipal.SubscriptionNumber}");
             }
             
+            Log.Info($"Successfully connected to Azure App Service '{webApp.Name}'");
+            Log.Verbose($"Resource group: {webApp.ResourceGroupName}");
+            Log.Verbose($"App Service Plan: {webApp.AppServicePlanId}");
             // Write the app service plan as an output variable, as we are planning to use it for as the basis for licensing Azure Web App targets 
             Log.SetOutputVariable(SpecialVariables.HealthCheck.Output.AppServicePlan, webApp.AppServicePlanId, variables);
         }
