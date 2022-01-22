@@ -23,12 +23,6 @@ changeBuildType(RelativeId("PublishToFeedzIo")) {
             args = "-Timeout 1200"
         }
     }
-    steps {
-        update<NuGetPublishStep>(0) {
-            clearConditions()
-            apiKey = "credentialsJSON:21016b86-e16b-4825-ab03-02ec2d979b7f"
-        }
-    }
 
     features {
         val feature1 = find<CommitStatusPublisher> {
@@ -38,14 +32,6 @@ changeBuildType(RelativeId("PublishToFeedzIo")) {
                     authType = personalToken {
                         token = "%commitStatusPublisher.apiKey%"
                     }
-                }
-            }
-        }
-        feature1.apply {
-            publisher = github {
-                githubUrl = "https://api.github.com"
-                authType = personalToken {
-                    token = "credentialsJSON:d2d6ff31-56f1-4893-a448-f7a517da6c88"
                 }
             }
         }
