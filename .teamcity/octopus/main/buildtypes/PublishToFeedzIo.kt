@@ -15,7 +15,7 @@ object PublishToFeedzIo : BuildType({
             toolPath = "%teamcity.tool.NuGet.CommandLine.DEFAULT%"
             packages = "*.nupkg"
             serverUrl = "%InternalNuget.OctopusDependeciesFeedUrl%"
-            apiKey = "%nuGetPublish.apiKey%"
+            apiKey = "%FeedzIoApiKey%"
             args = "-Timeout 1200"
         }
     }
