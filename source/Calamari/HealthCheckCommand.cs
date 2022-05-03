@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Calamari.Azure;
+using Calamari.CloudAccounts.Azure;
 using Calamari.Common.Commands;
 using Calamari.Common.Plumbing.Pipeline;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
 
 namespace Calamari.AzureAppService
 {

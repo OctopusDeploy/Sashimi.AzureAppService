@@ -1,7 +1,7 @@
 ﻿#nullable disable
 using System.Threading.Tasks;
-using Calamari.Azure;
 using Calamari.AzureAppService;
+using Calamari.CloudAccounts.Azure;
 using Calamari.Tests.Shared;
 using FluentAssertions;
 using Microsoft.Azure.Management.AppService.Fluent;

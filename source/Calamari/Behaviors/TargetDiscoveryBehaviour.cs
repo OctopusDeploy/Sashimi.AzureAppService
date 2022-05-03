@@ -1,10 +1,12 @@
-﻿using System;
+﻿
+
+#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Calamari.Azure;
-////using Calamari.AzureAppService.Azure;
+using Calamari.CloudAccounts.Azure;
 using Calamari.Common.Commands;
 using Calamari.Common.Features.Discovery;
 using Calamari.Common.Plumbing.Logging;
@@ -12,8 +14,6 @@ using Calamari.Common.Plumbing.Pipeline;
 using Calamari.Common.Plumbing.ServiceMessages;
 using Calamari.Common.Plumbing.Variables;
 using Microsoft.Azure.Management.AppService.Fluent;
-
-#nullable enable
 namespace Calamari.AzureAppService.Behaviors
 {
     public class TargetDiscoveryBehaviour : IDeployBehaviour

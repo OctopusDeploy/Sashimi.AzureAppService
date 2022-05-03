@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using Calamari.Azure;
+using Calamari.CloudAccounts.Azure;
 using Microsoft.Azure.Management.WebSites;
 using Microsoft.Azure.Management.WebSites.Models;
-using Microsoft.Rest.Azure;
 
 namespace Calamari.AzureAppService
 {

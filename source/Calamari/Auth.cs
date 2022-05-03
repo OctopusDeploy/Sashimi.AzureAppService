@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using Calamari.Azure;
+using Calamari.CloudAccounts.Azure;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace Calamari.AzureAppService

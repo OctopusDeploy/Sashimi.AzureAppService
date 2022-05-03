@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.ResourceManager.Resources;
 using Azure.ResourceManager.Resources.Models;
-using Calamari.Azure;
 using Calamari.AzureAppService.Behaviors;
-using Calamari.AzureAppService.Json;
+using Calamari.CloudAccounts.Azure;
 using Calamari.Common.Commands;
 using Calamari.Common.Plumbing.Variables;
 using Calamari.Tests.Shared;
@@ -19,9 +16,7 @@ using Microsoft.Azure.Management.WebSites;
 using Microsoft.Azure.Management.WebSites.Models;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
-using Newtonsoft.Json;
 using NUnit.Framework;
-using Octostache;
 
 namespace Calamari.AzureAppService.Tests
 {

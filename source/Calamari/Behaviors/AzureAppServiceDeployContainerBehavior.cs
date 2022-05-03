@@ -1,21 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.ExceptionServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
-using Calamari.Azure;
-using Calamari.AzureAppService.Json;
+using Calamari.CloudAccounts.Azure;
 using Calamari.Common.Commands;
 using Calamari.Common.Plumbing.Logging;
 using Calamari.Common.Plumbing.Pipeline;
 using Microsoft.Azure.Management.WebSites;
 using Microsoft.Rest;
-using Newtonsoft.Json;
 
 namespace Calamari.AzureAppService.Behaviors
 {

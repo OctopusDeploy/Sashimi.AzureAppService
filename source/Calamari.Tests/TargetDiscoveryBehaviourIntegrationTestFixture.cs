@@ -1,7 +1,6 @@
 ﻿using Azure.Identity;
 using Azure.ResourceManager.Resources;
 using Azure.ResourceManager.Resources.Models;
-using Calamari.Azure;
 using Calamari.AzureAppService.Behaviors;
 using Calamari.Common.Commands;
 using Calamari.Common.Features.Discovery;
@@ -15,10 +14,9 @@ using Microsoft.Rest;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Calamari.CloudAccounts.Azure;
 
 namespace Calamari.AzureAppService.Tests
 {

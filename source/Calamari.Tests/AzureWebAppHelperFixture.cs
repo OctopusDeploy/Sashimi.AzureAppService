@@ -1,14 +1,10 @@
-﻿using Calamari.Azure;
-using FluentAssertions;
-using FluentAssertions.Execution;
+﻿using FluentAssertions.Execution;
 using Microsoft.Azure.Management.AppService.Fluent;
 using NSubstitute;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Calamari.CloudAccounts.Azure;
+using FluentAssertions;
 
 namespace Calamari.AzureAppService.Tests
 {

@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.ResourceManager.Resources;
 using Azure.ResourceManager.Resources.Models;
-using Calamari.Azure;
 using Calamari.AzureAppService;
+using Calamari.CloudAccounts.Azure;
 using Calamari.Common.Plumbing.FileSystem;
 using Calamari.Common.Plumbing.Variables;
 using Calamari.Tests.Shared;
@@ -17,7 +17,6 @@ using Microsoft.Azure.Management.WebSites;
 using Microsoft.Azure.Management.WebSites.Models;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using Sashimi.Tests.Shared.Server;
 
