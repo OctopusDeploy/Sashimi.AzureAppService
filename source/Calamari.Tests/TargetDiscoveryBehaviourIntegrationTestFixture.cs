@@ -34,6 +34,7 @@ namespace Calamari.AzureAppService.Tests
         private ResourceGroupsOperations resourceGroupClient;
         private WebSiteManagementClient webMgmtClient;
         private string appName = Guid.NewGuid().ToString();
+        private List<string> slots = new List<string> { "blue", "green" };
 
         [OneTimeSetUp]
         public async Task Setup()
@@ -47,7 +48,7 @@ namespace Calamari.AzureAppService.Tests
 
             resourceGroupName = Guid.NewGuid().ToString();
 
-            clientId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionClientId);
+            clientId = Environment.GetEnvironmentVariable("Azure_OctopusAPITester_ClientId");
             clientSecret = ExternalVariables.Get(ExternalVariable.AzureSubscriptionPassword);
             tenantId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionTenantId);
             subscriptionId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionId);
@@ -80,20 +81,31 @@ namespace Calamari.AzureAppService.Tests
                 { TargetTags.EnvironmentTagName, "dev" },
                 { TargetTags.RoleTagName, "my-azure-app-role" },
             };
+
             await webMgmtClient.WebApps.BeginCreateOrUpdateAsync(
                 resourceGroup.Name,
                 appName,
                 new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id });
+
+            foreach (var slot in slots)
+            {
+                await webMgmtClient.WebApps.BeginCreateOrUpdateSlotAsync(
+                    resourceGroup.Name,
+                    appName,
+                    new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id },
+                    slot);
+            }
         }
 
         [OneTimeTearDown]
         public async Task Cleanup()
         {
-            await resourceGroupClient.StartDeleteAsync(resourceGroupName);
+            if (resourceGroupClient != null)
+                await resourceGroupClient.StartDeleteAsync(resourceGroupName);
         }
 
         [Test]
-        public async Task Exectute_FindsWebApp_WhenOneExistsWithCorrectTags()
+        public async Task Execute_FindsWebApp_WhenOneExistsWithCorrectTags()
         {
             // Arrange
             var variables = new CalamariVariables();
@@ -108,6 +120,28 @@ namespace Calamari.AzureAppService.Tests
             // Assert
             var expectedName = Convert.ToBase64String(Encoding.UTF8.GetBytes(appName));
             log.StandardOut.Should().Contain(line => line.StartsWith($"##octopus[create-azurewebapptarget name=\"{expectedName}\""));
+        }
+
+        [Test]
+        public async Task Execute_FindsMultipleWebAppSlots_WhenExistWithCorrectTags()
+        {
+            // Arrange
+            var variables = new CalamariVariables();
+            var context = new RunningDeployment(variables);
+            this.CreateVariables(context);
+            var log = new InMemoryLog();
+            var sut = new TargetDiscoveryBehaviour(log);
+
+            // Act
+            await sut.Execute(context);
+
+            // Assert
+            foreach (var slot in slots)
+            {
+                var expectedName = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{appName}/{slot}"));
+                var expectedSlotName = Convert.ToBase64String(Encoding.UTF8.GetBytes(slot));
+                log.StandardOut.Should().Contain(line => line.StartsWith($"##octopus[create-azurewebapptarget name=\"{expectedName}\" azureWebAppSlot=\"{expectedSlotName}\""));
+            }            
         }
 
         private void CreateVariables(RunningDeployment context)
