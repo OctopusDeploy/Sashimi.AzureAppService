@@ -51,7 +51,7 @@ namespace Calamari.AzureAppService.Tests
 
             resourceGroupName = Guid.NewGuid().ToString();
 
-            clientId = Environment.GetEnvironmentVariable("Azure_OctopusAPITester_ClientId");
+            clientId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionClientId);
             clientSecret = ExternalVariables.Get(ExternalVariable.AzureSubscriptionPassword);
             tenantId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionTenantId);
             subscriptionId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionId);
