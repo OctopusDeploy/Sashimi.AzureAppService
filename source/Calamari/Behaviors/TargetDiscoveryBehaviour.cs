@@ -104,7 +104,7 @@ namespace Calamari.AzureAppService.Behaviors
             catch (Exception ex)
             {
                 Log.Warn($"Error connecting to Azure to look for web apps:");
-                Log.Warn(ex.Message);
+                Log.Warn(ex.ToString());
                 Log.Warn("Aborting target discovery.");
             }
         }
