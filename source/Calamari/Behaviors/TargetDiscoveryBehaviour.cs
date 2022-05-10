@@ -109,7 +109,7 @@ namespace Calamari.AzureAppService.Behaviors
 
                 foreach (var header in dex.Response.Headers)
                 {
-                    Log.Warn($"{header.Key}: {header.Value}");
+                    Log.Warn($"{header.Key}: {string.Join(",", header.Value)}");
                 }
                 Log.Warn("Aborting target discovery.");
             }
