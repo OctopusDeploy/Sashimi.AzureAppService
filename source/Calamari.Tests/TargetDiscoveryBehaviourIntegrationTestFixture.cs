@@ -35,6 +35,8 @@ namespace Calamari.AzureAppService.Tests
         private WebSiteManagementClient webMgmtClient;
         private ResourceGroup resourceGroup;
         private AppServicePlan svcPlan;
+        private string appName = Guid.NewGuid().ToString();
+        private List<string> slotNames = new List<string> { "blue", "green" };
         private static readonly string AccountId = "Accounts-1";
         private static readonly string Role = "my-azure-app-role";
         private static readonly string EnvironmentName = "dev";
@@ -87,6 +89,15 @@ namespace Calamari.AzureAppService.Tests
                 await resourceGroupClient.StartDeleteAsync(resourceGroupName);
         }
 
+        [SetUp]
+        public async Task CreateOrResetWebAppAndSlots()
+        {
+            // Call update on the web app and each slot without and tags
+            // to reset it for each test.
+            await CreateOrUpdateTestWebApp();
+            await CreateOrUpdateTestWebAppSlots();
+        }
+
         [Test]
         public async Task Execute_WebAppWithMatchingTags_CreatesCorrectTargets()
         {
@@ -104,12 +115,7 @@ namespace Calamari.AzureAppService.Tests
                 { TargetTags.RoleTagName, Role },
             };
 
-            var appName = Guid.NewGuid().ToString();
-
-            await webMgmtClient.WebApps.CreateOrUpdateAsync(
-                resourceGroupName,
-                appName,
-                new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id });
+            await CreateOrUpdateTestWebApp(tags);
 
             // Act
             await sut.Execute(context);
@@ -136,12 +142,7 @@ namespace Calamari.AzureAppService.Tests
                 { TargetTags.RoleTagName, "a-different-role" },
             };
 
-            var appName = Guid.NewGuid().ToString();
-
-            await webMgmtClient.WebApps.CreateOrUpdateAsync(
-                resourceGroupName,
-                appName,
-                new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id });
+            await CreateOrUpdateTestWebApp(tags);
 
             // Act
             await sut.Execute(context);
@@ -168,23 +169,7 @@ namespace Calamari.AzureAppService.Tests
                 { TargetTags.RoleTagName, Role },
             };
 
-            var appName = Guid.NewGuid().ToString();
-
-            await webMgmtClient.WebApps.CreateOrUpdateAsync(
-                resourceGroupName,
-                appName,
-                new Site(resourceGroup.Location) { ServerFarmId = svcPlan.Id });
-
-            var slotNames = new List<string> { "blue", "green" };
-
-            foreach (var slotName in slotNames)
-            {
-                await webMgmtClient.WebApps.CreateOrUpdateSlotAsync(
-                    resourceGroup.Name,
-                    appName,
-                    new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id },
-                    slotName);
-            }
+            await CreateOrUpdateTestWebAppSlots(tags);
 
             // Act
             await sut.Execute(context);
@@ -217,23 +202,8 @@ namespace Calamari.AzureAppService.Tests
                 { TargetTags.RoleTagName, Role },
             };
 
-            var appName = Guid.NewGuid().ToString();
-
-            await webMgmtClient.WebApps.CreateOrUpdateAsync(
-                resourceGroupName,
-                appName,
-                new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id });
-
-            var slotNames = new List<string> { "blue", "green" };
-
-            foreach (var slotName in slotNames)
-            {
-                await webMgmtClient.WebApps.CreateOrUpdateSlotAsync(
-                    resourceGroup.Name,
-                    appName,
-                    new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id },
-                    slotName);
-            }
+            await CreateOrUpdateTestWebApp(tags);
+            await CreateOrUpdateTestWebAppSlots(tags);
 
             // Act
             await sut.Execute(context);
@@ -270,23 +240,8 @@ namespace Calamari.AzureAppService.Tests
                 { TargetTags.RoleTagName, Role },
             };
 
-            var appName = Guid.NewGuid().ToString();
-
-            await webMgmtClient.WebApps.CreateOrUpdateAsync(
-                resourceGroupName,
-                appName,
-                new Site(resourceGroup.Location, tags: webAppTags) { ServerFarmId = svcPlan.Id });
-
-            var slotNames = new List<string> { "blue", "green" };
-
-            foreach (var slotName in slotNames)
-            {
-                await webMgmtClient.WebApps.CreateOrUpdateSlotAsync(
-                    resourceGroup.Name,
-                    appName,
-                    new Site(resourceGroup.Location, tags: slotTags) { ServerFarmId = svcPlan.Id },
-                    slotName);
-            }
+            await CreateOrUpdateTestWebApp(webAppTags);
+            await CreateOrUpdateTestWebAppSlots(slotTags);
 
             // Act
             await sut.Execute(context);
@@ -299,6 +254,26 @@ namespace Calamari.AzureAppService.Tests
             {
                 var serviceMessageToCreateTargetForSlot = TargetDiscoveryHelpers.CreateWebAppDeploymentSlotTargetCreationServiceMessage(resourceGroupName, appName, slotName, AccountId, Role, null);
                 log.StandardOut.Should().NotContain(serviceMessageToCreateTargetForSlot.ToString(), "A target should not be created for the web app slot as the tags directly on the slot do not match, even though when combined with the web app tags they do");
+            }
+        }
+
+        private async Task CreateOrUpdateTestWebApp(Dictionary<string, string> tags = null)
+        {
+            await webMgmtClient.WebApps.CreateOrUpdateAsync(
+                resourceGroupName,
+                appName,
+                new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id });
+        }
+
+        private async Task CreateOrUpdateTestWebAppSlots(Dictionary<string, string> tags = null)
+        {
+            foreach (var slotName in slotNames)
+            {
+                await webMgmtClient.WebApps.CreateOrUpdateSlotAsync(
+                    resourceGroup.Name,
+                    appName,
+                    new Site(resourceGroup.Location, tags: tags) { ServerFarmId = svcPlan.Id },
+                    slotName);
             }
         }
 
