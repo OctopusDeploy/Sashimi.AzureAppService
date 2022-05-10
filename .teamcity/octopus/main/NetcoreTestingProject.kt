@@ -13,7 +13,6 @@ class NetcoreTestingProject : Project({
                 ("Amazon Linux" to "AmazonLinux"),
                 ("Ubuntu" to "Ubuntu"),
                 ("openSUSE Leap" to "openSUSE"),
-                ("SUSE LES" to "SLES"),
                 ("CentOS" to "CentOS"),
                 ("Fedora" to "Fedora"),
                 ("Debian" to "Debian"),
@@ -48,20 +47,9 @@ class NetcoreTestingProject : Project({
                 exists("system.Octopus.DotnetSdk3.1")
             }
         })
-        yield(DotNetTestBuildType {
-            id("Mac OSX".toId(projectName.toId()))
-            name = "Mac OSX"
-            params {
-                param("dotnet_runtime", "osx-x64")
-            }
-            requirements {
-                exists("DotNetCLI")
-                equals("teamcity.agent.jvm.os.name", "Mac OS X")
-            }
-        })
     }
 
-    buildTypesToRegister.forEach { buildType(it.commitStatusPublisher()) }
+    buildTypesToRegister.forEach { buildType(it.commitStatusPublisher().githubPullRequests()) }
     buildTypesOrder = buildTypes.toList()
 
     params {
