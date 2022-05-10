@@ -12,6 +12,7 @@ using Calamari.Common.Plumbing.Pipeline;
 using Calamari.Common.Plumbing.ServiceMessages;
 using Calamari.Common.Plumbing.Variables;
 using Microsoft.Azure.Management.AppService.Fluent;
+using Microsoft.Azure.Management.AppService.Fluent.Models;
 
 #nullable enable
 namespace Calamari.AzureAppService.Behaviors
@@ -101,10 +102,21 @@ namespace Calamari.AzureAppService.Behaviors
                     Log.Warn($"Could not find any Azure web app targets.");
                 }
             }
+            catch (DefaultErrorResponseException dex)
+            {
+                Log.Warn($"Error connecting to Azure to look for web apps:");
+                Log.Warn(dex.Message);
+
+                foreach (var header in dex.Response.Headers)
+                {
+                    Log.Warn($"{header.Key}: {header.Value}");
+                }
+                Log.Warn("Aborting target discovery.");
+            }
             catch (Exception ex)
             {
                 Log.Warn($"Error connecting to Azure to look for web apps:");
-                Log.Warn(ex.ToString());
+                Log.Warn(ex.Message);
                 Log.Warn("Aborting target discovery.");
             }
         }
