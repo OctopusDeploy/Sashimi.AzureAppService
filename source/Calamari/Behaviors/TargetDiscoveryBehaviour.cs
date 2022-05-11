@@ -69,6 +69,8 @@ namespace Calamari.AzureAppService.Behaviors
                         }
                     }
 
+                    Log.Verbose($"Looking for deployment slots in web app {webApp.Name}");
+
                     var deploymentSlots = webApp.DeploymentSlots.List();
 
                     foreach (var slot in deploymentSlots)
