@@ -127,7 +127,7 @@ namespace Calamari.AzureAppService.Behaviors
 
         private IEnumerable<IWebApp> ListWebApps(IAzure azureClient)
         {
-            var policy = CreateAzureQueryRetryPolicy(3, $"listing web apps");
+            var policy = CreateAzureQueryRetryPolicy(5, $"listing web apps");
 
             return policy.Execute(() =>
             {
@@ -162,7 +162,7 @@ namespace Calamari.AzureAppService.Behaviors
 
         private IEnumerable<IDeploymentSlot> ListDeploymentSlots(IWebApp webApp)
         {
-            var policy = CreateAzureQueryRetryPolicy(3, $"listing deployment slots for web app {webApp.Name}");
+            var policy = CreateAzureQueryRetryPolicy(5, $"listing deployment slots for web app {webApp.Name}");
 
             return policy.Execute(() =>
             {
