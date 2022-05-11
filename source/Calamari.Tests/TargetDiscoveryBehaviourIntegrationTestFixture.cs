@@ -73,7 +73,7 @@ namespace Calamari.AzureAppService.Tests
             webMgmtClient = new WebSiteManagementClient(new TokenCredentials(authToken))
             {
                 SubscriptionId = subscriptionId,
-                HttpClient = { BaseAddress = new Uri(DefaultVariables.ResourceManagementEndpoint) },
+                HttpClient = { BaseAddress = new Uri(DefaultVariables.ResourceManagementEndpoint), Timeout = TimeSpan.FromMinutes(5) },
             };
 
             svcPlan = await webMgmtClient.AppServicePlans.CreateOrUpdateAsync(resourceGroup.Name,
