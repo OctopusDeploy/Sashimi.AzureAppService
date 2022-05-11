@@ -106,17 +106,6 @@ namespace Calamari.AzureAppService.Behaviors
                     Log.Warn($"Could not find any Azure web app targets.");
                 }
             }
-            catch (DefaultErrorResponseException dex)
-            {
-                Log.Warn($"Error connecting to Azure to look for web apps:");
-                Log.Warn(dex.Message);
-
-                foreach (var header in dex.Response.Headers)
-                {
-                    Log.Warn($"{header.Key}: {string.Join(",", header.Value)}");
-                }
-                Log.Warn("Aborting target discovery.");
-            }
             catch (Exception ex)
             {
                 Log.Warn($"Error connecting to Azure to look for web apps:");
