@@ -156,8 +156,10 @@ namespace Sashimi.AzureAppService.Tests
                 // Assert
                 result.Outcome.Should().Be(ExecutionOutcome.Unsuccessful);
 
-                var errors = errorReader.ReadErrors();
-                errors.Should().Contain("No such host is known. (non-existent-proxy.local:3128)");
+                // This also operates differently locally vs on CI, so combine both StdErr and Calamari Log to get
+                // the full picture
+                var calamariOutput = result.FullLog + errorReader.ReadErrors();
+                calamariOutput.Should().Contain("No such host is known. (non-existent-proxy.local:3128)");
             }
         }
 
