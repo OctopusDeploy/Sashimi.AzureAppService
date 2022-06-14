@@ -1,5 +1,6 @@
 ﻿#nullable disable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -135,8 +136,8 @@ namespace Sashimi.AzureAppService.Tests
             var tenantId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionTenantId);
             var subscriptionId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionId);
 
-            using var errorReader = new ConsoleErrorReader();
-            using (new ProxySettings("non-existent-proxy.local", 3128))
+            using (new ProxySettingsMemento("non-existent-proxy.local", 3128))
+            using (var errorReader = new ConsoleErrorReaderMemento())
             {
                 // Act
                 var result = ActionHandlerTestBuilder.CreateAsync<AzureWebAppHealthCheckActionHandler, Program>()
@@ -150,7 +151,7 @@ namespace Sashimi.AzureAppService.Tests
                         context.Variables.Add(SpecialVariables.Action.Azure.WebAppName, randomName);
                         context.Variables.Add(SpecialVariables.AccountType, AccountTypes.AzureServicePrincipalAccountType.ToString());
                     })
-                    .Execute(false);
+                    .Execute(assertWasSuccess: false);
 
                 // Assert
                 result.Outcome.Should().Be(ExecutionOutcome.Unsuccessful);
@@ -165,49 +166,112 @@ namespace Sashimi.AzureAppService.Tests
         /// then allows reading what was written at any stage.
         /// Original StandardError target is restored on dispose.
         /// </summary>
-        class ConsoleErrorReader : IDisposable
+        private class ConsoleErrorReaderMemento : AutoResetMemento<TextWriter>
         {
-            private StringWriter stringWriter;
-            private TextWriter originalError;
+            private readonly StringWriter stringWriter;
 
-            public ConsoleErrorReader()
+            public ConsoleErrorReaderMemento()
+                : base(() => Console.Error, Console.SetError)
             {
-                originalError = Console.Error;
-
                 stringWriter = new StringWriter();
-                Console.SetError(stringWriter);
+                base.SetValue(stringWriter);
             }
 
             public string ReadErrors()
             {
                 return stringWriter.ToString();
             }
+        }
+
+        /// <summary>
+        /// Sets a Proxy Settings for the lifetime of the ProxySettingsMemento object.
+        /// Original settings are restored on dispose.
+        /// </summary>
+        /// <remarks>
+        /// Calamari Tests operate differently on CI (out of process Calamari.exe) and locally (in-process code execution).
+        /// When in-process, the WebRequest.DefaultWebProxy is used. When out-of-process, the EnvVars are used.
+        /// </remarks>
+        private class ProxySettingsMemento : IDisposable
+        {
+            private readonly List<IDisposable> mementos;
+
+            public ProxySettingsMemento(string hostname, int port)
+            {
+                mementos = new List<IDisposable>();
+
+                SetLocalEnvironmentProxySettings(hostname, port);
+                SetCiEnvironmentProxySettings(hostname, port);
+            }
+
+            private void SetLocalEnvironmentProxySettings(string hostname, int port)
+            {
+                var proxySettings = new UseCustomProxySettings(hostname, port, null!, null!).CreateProxy().Value;
+                mementos.Add(new AutoResetMemento<IWebProxy?>(() => WebRequest.DefaultWebProxy, v => WebRequest.DefaultWebProxy = v, proxySettings));
+            }
+
+            private void SetCiEnvironmentProxySettings(string hostname, int port)
+            {
+                mementos.Add(new EnvironmentVariableMemento(EnvironmentVariables.TentacleProxyHost, hostname));
+                mementos.Add(new EnvironmentVariableMemento(EnvironmentVariables.TentacleProxyPort, $"{port}"));
+            }
 
             public void Dispose()
             {
-                Console.SetError(originalError);
+                mementos.ForEach(m => m.Dispose());
             }
         }
 
         /// <summary>
-        /// Sets a DefaultWebProxy for the lifetime of the ProxySettings object.
-        /// Original DefaultWebProxy is restored on dispose.
+        /// Sets an Environment Variable for the lifetime of the EnvironmentVariableMemento object.
+        /// Original setting is restored on dispose.
         /// </summary>
-        class ProxySettings : IDisposable
+        private class EnvironmentVariableMemento : AutoResetMemento<string>
         {
-            private IWebProxy? originalProxySettings;
-
-            public ProxySettings(string hostname, int port)
+            public EnvironmentVariableMemento(string variableName, string testValue)
+                : base(() => Environment.GetEnvironmentVariable(variableName),
+                    value => Environment.SetEnvironmentVariable(variableName, value),
+                    testValue)
             {
-                originalProxySettings = WebRequest.DefaultWebProxy;
+            }
+        }
 
-                var proxy = new UseCustomProxySettings(hostname, port, null, null);
-                WebRequest.DefaultWebProxy = proxy.CreateProxy().Value;
+        /// <summary>
+        /// A not-quite implementation of the Memento pattern, which enables a single original value to be remembered,
+        /// temporarily overridden with a new value, and then automatically set back to the original value at the end
+        /// of the object's lifetime.
+        ///
+        /// Useful for managing potentially-shared state, though in a simplistic way.
+        /// </summary>
+        /// <remarks>
+        /// Does not attempt to handle concurrency: may produce unexpected results if multiple AutoResetMementos
+        /// are modifying the same shared state (eg Environment variables) across threads.
+        /// </remarks>
+        /// <typeparam name="TValue"></typeparam>
+        private class AutoResetMemento<TValue> : IDisposable
+        {
+            private readonly TValue originalValue;
+            private readonly Action<TValue> setter;
+
+            public AutoResetMemento(Func<TValue> getter, Action<TValue> setter)
+            {
+                originalValue = getter();
+                this.setter = setter;
+            }
+
+            public AutoResetMemento(Func<TValue> getter, Action<TValue> setter, TValue newValue)
+                : this(getter, setter)
+            {
+                SetValue(newValue);
+            }
+
+            public void SetValue(TValue value)
+            {
+                setter(value);
             }
 
             public void Dispose()
             {
-                WebRequest.DefaultWebProxy = originalProxySettings;
+                setter(originalValue);
             }
         }
     }
