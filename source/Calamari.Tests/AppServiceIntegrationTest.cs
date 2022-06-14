@@ -103,5 +103,15 @@ namespace Calamari.AzureAppService.Tests
                 }
             }
         }
+        
+        protected void AddAzureVariables(CommandTestBuilderContext context)
+        {
+            context.Variables.Add(AccountVariables.ClientId, clientId);
+            context.Variables.Add(AccountVariables.Password, clientSecret);
+            context.Variables.Add(AccountVariables.TenantId, tenantId);
+            context.Variables.Add(AccountVariables.SubscriptionId, subscriptionId);
+            context.Variables.Add("Octopus.Action.Azure.ResourceGroupName", resourceGroupName);
+            context.Variables.Add("Octopus.Action.Azure.WebAppName", site.Name);
+        }
     }
 }
