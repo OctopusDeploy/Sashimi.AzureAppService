@@ -119,6 +119,28 @@ namespace Sashimi.AzureAppService.Tests
                 .WithAssert(result => result.WasSuccessful.Should().BeFalse())
                 .Execute(false);
         }
+    }
+
+    [TestFixture]
+    class AzureWebAppHealthCheckActionHandlerProxyFixture
+    {
+        private const string NonExistentProxyHostname = "non-existent-proxy.local";
+        private const int NonExistentProxyPort = 3128;
+
+        private IWebProxy? originalProxy;
+        private string originalProxyHost;
+        private string originalProxyPort;
+
+        private StringWriter errorStream;
+        private TextWriter originalConsoleErrorOut;
+
+        [SetUp]
+        public void SetUp()
+        {
+            SetLocalEnvironmentProxySettings(NonExistentProxyHostname, NonExistentProxyPort);
+            SetCiEnvironmentProxySettings(NonExistentProxyHostname, NonExistentProxyPort);
+            SetConsoleErrorOut();
+        }
 
         /// <summary>
         /// Configuring all the infrastructure required for a proper proxy test (with blocking certain addresses, proxy
@@ -136,150 +158,80 @@ namespace Sashimi.AzureAppService.Tests
             var tenantId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionTenantId);
             var subscriptionId = ExternalVariables.Get(ExternalVariable.AzureSubscriptionId);
 
-            using (new ProxySettingsMemento("non-existent-proxy.local", 3128))
-            using (var errorReader = new ConsoleErrorReaderMemento())
-            {
-                // Act
-                var result = ActionHandlerTestBuilder.CreateAsync<AzureWebAppHealthCheckActionHandler, Program>()
-                    .WithArrange(context =>
-                    {
-                        context.Variables.Add(AccountVariables.SubscriptionId, subscriptionId);
-                        context.Variables.Add(AccountVariables.TenantId, tenantId);
-                        context.Variables.Add(AccountVariables.ClientId, clientId);
-                        context.Variables.Add(AccountVariables.Password, clientSecret);
-                        context.Variables.Add(SpecialVariables.Action.Azure.ResourceGroupName, randomName);
-                        context.Variables.Add(SpecialVariables.Action.Azure.WebAppName, randomName);
-                        context.Variables.Add(SpecialVariables.AccountType, AccountTypes.AzureServicePrincipalAccountType.ToString());
-                    })
-                    .Execute(assertWasSuccess: false);
+            // Act
+            var result = ActionHandlerTestBuilder.CreateAsync<AzureWebAppHealthCheckActionHandler, Program>()
+                .WithArrange(context =>
+                {
+                    context.Variables.Add(AccountVariables.SubscriptionId, subscriptionId);
+                    context.Variables.Add(AccountVariables.TenantId, tenantId);
+                    context.Variables.Add(AccountVariables.ClientId, clientId);
+                    context.Variables.Add(AccountVariables.Password, clientSecret);
+                    context.Variables.Add(SpecialVariables.Action.Azure.ResourceGroupName, randomName);
+                    context.Variables.Add(SpecialVariables.Action.Azure.WebAppName, randomName);
+                    context.Variables.Add(SpecialVariables.AccountType, AccountTypes.AzureServicePrincipalAccountType.ToString());
+                })
+                .Execute(assertWasSuccess: false);
 
-                // Assert
-                result.Outcome.Should().Be(ExecutionOutcome.Unsuccessful);
+            // Assert
+            result.Outcome.Should().Be(ExecutionOutcome.Unsuccessful);
 
-                // This also operates differently locally vs on CI, so combine both StdErr and Calamari Log to get
-                // the full picture
-                var calamariOutput = result.FullLog + errorReader.ReadErrors();
-                var windowsNetFxDnsError = "The remote name could not be resolved: 'non-existent-proxy.local'";
-                var ubuntuDnsError = "Resource temporarily unavailable (non-existent-proxy.local:3128)";
-                var generalLinuxDnsError = "Name or service not known (non-existent-proxy.local:3128)";
-                var windowsDotNetDnsError = "No such host is known. (non-existent-proxy.local:3128)";
+            // This also operates differently locally vs on CI, so combine both StdErr and Calamari Log to get
+            // the full picture
+            var windowsNetFxDnsError = "The remote name could not be resolved: 'non-existent-proxy.local'";
+            var ubuntuDnsError = "Resource temporarily unavailable (non-existent-proxy.local:3128)";
+            var generalLinuxDnsError = "Name or service not known (non-existent-proxy.local:3128)";
+            var windowsDotNetDnsError = "No such host is known. (non-existent-proxy.local:3128)";
 
-                calamariOutput.Should().ContainAny(windowsDotNetDnsError, ubuntuDnsError,generalLinuxDnsError, windowsNetFxDnsError);
-            }
+            var calamariOutput = result.FullLog + errorStream;
+            calamariOutput.Should().ContainAny(windowsDotNetDnsError, ubuntuDnsError,generalLinuxDnsError, windowsNetFxDnsError);
         }
 
-        /// <summary>
-        /// Redirects StandardError to a local text reader for the lifetime of the ConsoleErrorReader object,
-        /// then allows reading what was written at any stage.
-        /// Original StandardError target is restored on dispose.
-        /// </summary>
-        private class ConsoleErrorReaderMemento : AutoResetMemento<TextWriter>
+        [TearDown]
+        public void TearDown()
         {
-            private readonly StringWriter stringWriter;
-
-            public ConsoleErrorReaderMemento()
-                : base(() => Console.Error, Console.SetError)
-            {
-                stringWriter = new StringWriter();
-                base.SetValue(stringWriter);
-            }
-
-            public string ReadErrors()
-            {
-                return stringWriter.ToString();
-            }
+            RestoreLocalEnvironmentProxySettings();
+            RestoreCiEnvironmentProxySettings();
+            RestoreConsoleErrorOut();
         }
 
-        /// <summary>
-        /// Sets a Proxy Settings for the lifetime of the ProxySettingsMemento object.
-        /// Original settings are restored on dispose.
-        /// </summary>
-        /// <remarks>
-        /// Calamari Tests operate differently on CI (out of process Calamari.exe) and locally (in-process code execution).
-        /// When in-process, the WebRequest.DefaultWebProxy is used. When out-of-process, the EnvVars are used.
-        /// </remarks>
-        private class ProxySettingsMemento : IDisposable
+        private void SetConsoleErrorOut()
         {
-            private readonly List<IDisposable> mementos;
-
-            public ProxySettingsMemento(string hostname, int port)
-            {
-                mementos = new List<IDisposable>();
-
-                SetLocalEnvironmentProxySettings(hostname, port);
-                SetCiEnvironmentProxySettings(hostname, port);
-            }
-
-            private void SetLocalEnvironmentProxySettings(string hostname, int port)
-            {
-                var proxySettings = new UseCustomProxySettings(hostname, port, null!, null!).CreateProxy().Value;
-                mementos.Add(new AutoResetMemento<IWebProxy?>(() => WebRequest.DefaultWebProxy, v => WebRequest.DefaultWebProxy = v, proxySettings));
-            }
-
-            private void SetCiEnvironmentProxySettings(string hostname, int port)
-            {
-                mementos.Add(new EnvironmentVariableMemento(EnvironmentVariables.TentacleProxyHost, hostname));
-                mementos.Add(new EnvironmentVariableMemento(EnvironmentVariables.TentacleProxyPort, $"{port}"));
-            }
-
-            public void Dispose()
-            {
-                mementos.ForEach(m => m.Dispose());
-            }
+            originalConsoleErrorOut = Console.Error;
+            errorStream = new StringWriter();
+            Console.SetError(errorStream);
         }
 
-        /// <summary>
-        /// Sets an Environment Variable for the lifetime of the EnvironmentVariableMemento object.
-        /// Original setting is restored on dispose.
-        /// </summary>
-        private class EnvironmentVariableMemento : AutoResetMemento<string>
+        private void SetLocalEnvironmentProxySettings(string hostname, int port)
         {
-            public EnvironmentVariableMemento(string variableName, string testValue)
-                : base(() => Environment.GetEnvironmentVariable(variableName),
-                    value => Environment.SetEnvironmentVariable(variableName, value),
-                    testValue)
-            {
-            }
+            originalProxy = WebRequest.DefaultWebProxy;
+
+            var proxySettings = new UseCustomProxySettings(hostname, port, null!, null!).CreateProxy().Value;
+            WebRequest.DefaultWebProxy = proxySettings;
         }
 
-        /// <summary>
-        /// A not-quite implementation of the Memento pattern, which enables a single original value to be remembered,
-        /// temporarily overridden with a new value, and then automatically set back to the original value at the end
-        /// of the object's lifetime.
-        ///
-        /// Useful for managing potentially-shared state, though in a simplistic way.
-        /// </summary>
-        /// <remarks>
-        /// Does not attempt to handle concurrency: may produce unexpected results if multiple AutoResetMementos
-        /// are modifying the same shared state (eg Environment variables) across threads.
-        /// </remarks>
-        /// <typeparam name="TValue"></typeparam>
-        private class AutoResetMemento<TValue> : IDisposable
+        private void SetCiEnvironmentProxySettings(string hostname, int port)
         {
-            private readonly TValue originalValue;
-            private readonly Action<TValue> setter;
+            originalProxyHost = Environment.GetEnvironmentVariable(EnvironmentVariables.TentacleProxyHost);
+            originalProxyPort = Environment.GetEnvironmentVariable(EnvironmentVariables.TentacleProxyPort);
 
-            public AutoResetMemento(Func<TValue> getter, Action<TValue> setter)
-            {
-                originalValue = getter();
-                this.setter = setter;
-            }
+            Environment.SetEnvironmentVariable(EnvironmentVariables.TentacleProxyHost, hostname);
+            Environment.SetEnvironmentVariable(EnvironmentVariables.TentacleProxyPort, $"{port}");
+        }
 
-            public AutoResetMemento(Func<TValue> getter, Action<TValue> setter, TValue newValue)
-                : this(getter, setter)
-            {
-                SetValue(newValue);
-            }
+        private void RestoreConsoleErrorOut()
+        {
+            Console.SetError(originalConsoleErrorOut);
+        }
 
-            public void SetValue(TValue value)
-            {
-                setter(value);
-            }
+        private void RestoreLocalEnvironmentProxySettings()
+        {
+            WebRequest.DefaultWebProxy = originalProxy;
+        }
 
-            public void Dispose()
-            {
-                setter(originalValue);
-            }
+        private void RestoreCiEnvironmentProxySettings()
+        {
+            Environment.SetEnvironmentVariable(EnvironmentVariables.TentacleProxyHost, originalProxyHost);
+            Environment.SetEnvironmentVariable(EnvironmentVariables.TentacleProxyPort, originalProxyPort);
         }
     }
 }
