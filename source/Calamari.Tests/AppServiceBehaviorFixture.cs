@@ -288,9 +288,6 @@ namespace Calamari.AzureAppService.Tests
         [TestFixture]
         public class WhenUsingALinuxAppService : AppServiceIntegrationTest
         {
-            private string linuxServicePlanName;
-            private string functionAppSiteName;
-            
             protected override async Task ConfigureTestResources(ResourceGroup resourceGroup)
             {
                 var storageClient = new StorageManagementClient(new TokenCredentials(authToken))
@@ -320,7 +317,7 @@ namespace Calamari.AzureAppService.Tests
                     }
                 );
 
-                var functionAppSite = await webMgmtClient.WebApps.BeginCreateOrUpdateAsync(resourceGroupName,
+                site = await webMgmtClient.WebApps.BeginCreateOrUpdateAsync(resourceGroupName,
                     $"{resourceGroupName}-linux",
                     new Site(resourceGroupLocation)
                     {
@@ -341,9 +338,6 @@ namespace Calamari.AzureAppService.Tests
                         }
                     }
                 );
-                
-                linuxServicePlanName = linuxSvcPlan.Name;
-                functionAppSiteName = functionAppSite.Name;
             }
             
             [Test]
@@ -362,7 +356,7 @@ namespace Calamari.AzureAppService.Tests
                 // Assert
                 await DoWithRetries(10, async () =>
                 {
-                    await AssertContent($"{functionAppSiteName}.azurewebsites.net", 
+                    await AssertContent($"{site.Name}.azurewebsites.net", 
                         rootPath: $"api/HttpExample?name={greeting}", 
                         actualText: $"Hello, {greeting}");
                 },
@@ -373,9 +367,9 @@ namespace Calamari.AzureAppService.Tests
             public async Task CanDeployZip_ToLinuxFunctionApp_WithRunFromPackageFlag()
             {
                 // Arrange
-                var settings = await webMgmtClient.WebApps.ListApplicationSettingsAsync(resourceGroupName, functionAppSiteName);
+                var settings = await webMgmtClient.WebApps.ListApplicationSettingsAsync(resourceGroupName, site.Name);
                 settings.Properties["WEBSITE_RUN_FROM_PACKAGE"] = "1";
-                await webMgmtClient.WebApps.UpdateApplicationSettingsAsync(resourceGroupName, functionAppSiteName, settings);
+                await webMgmtClient.WebApps.UpdateApplicationSettingsAsync(resourceGroupName, site.Name, settings);
                 
                 var packageInfo = PrepareZipPackage();
 
@@ -389,7 +383,7 @@ namespace Calamari.AzureAppService.Tests
                 // Assert
                 await DoWithRetries(10, async () =>
                     {
-                        await AssertContent($"{functionAppSiteName}.azurewebsites.net", 
+                        await AssertContent($"{site.Name}.azurewebsites.net", 
                             rootPath: $"api/HttpExample?name={greeting}", 
                             actualText: $"Hello, {greeting}");
                     },
