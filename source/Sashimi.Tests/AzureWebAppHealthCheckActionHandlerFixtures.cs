@@ -159,7 +159,12 @@ namespace Sashimi.AzureAppService.Tests
                 // This also operates differently locally vs on CI, so combine both StdErr and Calamari Log to get
                 // the full picture
                 var calamariOutput = result.FullLog + errorReader.ReadErrors();
-                calamariOutput.Should().Contain("No such host is known. (non-existent-proxy.local:3128)");
+                var windowsNetFxDnsError = "The remote name could not be resolved: 'non-existent-proxy.local'";
+                var ubuntuDnsError = "Resource temporarily unavailable (non-existent-proxy.local:3128)";
+                var generalLinuxDnsError = "Name or service not known (non-existent-proxy.local:3128)";
+                var windowsDotNetDnsError = "No such host is known. (non-existent-proxy.local:3128)";
+
+                calamariOutput.Should().ContainAny(windowsDotNetDnsError, ubuntuDnsError,generalLinuxDnsError, windowsNetFxDnsError);
             }
         }
 
