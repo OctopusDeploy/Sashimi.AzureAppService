@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Octopus.Server.Extensibility.Sashimi.AzureAppService</AssemblyName>
+    <RootNamespace>Octopus.Server.Extensibility.Sashimi.AzureAppService</RootNamespace>
+    <TargetFramework>net6.0</TargetFramework>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+    <OutputPath>bin\</OutputPath>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>NU5119</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Octopus.Configuration" Version="4.0.0" />
+    <PackageReference Include="Sashimi.Azure.Accounts" Version="14.2.0" />
+    <PackageReference Include="Sashimi.Azure.Common" Version="14.2.0" />
+    <PackageReference Include="Sashimi.AzureScripting" Version="14.2.0" />
+    <PackageReference Include="Sashimi.Server.Contracts" Version="14.2.0" />
+  </ItemGroup>
+
+</Project>
