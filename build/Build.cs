@@ -105,7 +105,7 @@ class Build : NukeBuild
                         File.Copy(RootDirectory / "global.json", PublishDirectory / calamariFlavour / platform / "global.json");
                     }
 
-                    if(framework == "net5.0")
+                    if(framework == "net6.0")
                     {
                         var runtimes = XmlTasks.XmlPeekSingle(project, "Project/PropertyGroup/RuntimeIdentifiers")?.Split(';');
                         foreach (var runtime in runtimes)
@@ -129,6 +129,7 @@ class Build : NukeBuild
 
                 CompressionTasks.CompressZip(PublishDirectory / calamariFlavour, $"{ArtifactsDirectory / calamariFlavour}.zip");
             }
+
         });
 
     Target PublishSashimiTestProjects => _ => _
@@ -173,7 +174,6 @@ class Build : NukeBuild
 
     // ReSharper disable once UnusedMember.Local - it is actually used (see TriggeredBy)
     Target CopyToLocalPackages => _ => _
-        .DependsOn(Test)
         .TriggeredBy(PackSashimi)
         .Unlisted()
         .OnlyWhenStatic(() => IsLocalBuild)
